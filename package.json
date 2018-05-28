@@ -1,0 +1,38 @@
+{
+  "name": "abrain",
+  "version": "1.0.0",
+  "description": "3D brain visualization with real use case implementation",
+  "scripts": {
+    "build": "webpack",
+    "start": "webpack-dev-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/tihbe/abrain.git"
+  },
+  "keywords": [
+    "brain",
+    "ai",
+    "3d"
+  ],
+  "author": "Ismael Balafrej",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tihbe/abrain/issues"
+  },
+  "homepage": "https://github.com/tihbe/abrain#readme",
+  "dependencies": {
+    "@types/three": "^0.92.3",
+    "three": "^0.92.0"
+  },
+  "devDependencies": {
+    "css-loader": "^0.28.11",
+    "html-webpack-plugin": "^3.2.0",
+    "style-loader": "^0.21.0",
+    "ts-loader": "^4.3.0",
+    "typescript": "^2.8.3",
+    "webpack": "^4.9.1",
+    "webpack-cli": "^2.1.4",
+    "webpack-dev-server": "^3.1.4"
+  }
+}
