@@ -1,43 +1,25 @@
 import './css/index.css';
 import * as Three from 'three';
+import EventProcessingEngine from "./core/EventProcessingEngine";
+import BrowserUtils from "./utils/BrowserUtils";
 
-interface Dimensions {
-  width: number;
-  height: number;
-}
 
-namespace BrowserUtils {
-  export function GetBrowserDimension(): Dimensions {
-    // Thanks, https://stackoverflow.com/a/1038781
-    function getWidth() {
-      return Math.max(
-        document.body.scrollWidth,
-        document.documentElement.scrollWidth,
-        document.body.offsetWidth,
-        document.documentElement.offsetWidth,
-        document.documentElement.clientWidth
-      );
-    }
-    
-    function getHeight() {
-      return Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight,
-        document.body.offsetHeight,
-        document.documentElement.offsetHeight,
-        document.documentElement.clientHeight
-      );
-    }
-    return {
-      width: getWidth(),
-      height: getHeight()
-    }
-  }
-}
+/* Create the global event processing engine for browser related events */
+const GlobalBrowserEventProcessingEngine = new EventProcessingEngine();
+const OnMouseMoveCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnMouseMove");
+document.addEventListener("mousemove", OnMouseMoveCallback as any, false);
+const OnTouchStartCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnTouchStart");
+document.addEventListener("touchstart", OnTouchStartCallback as any, false);
+const OnTouchMoveCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnTouchMove");
+document.addEventListener("touchmove", OnTouchMoveCallback as any, false);
+const OnWindowResizeCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnWindowResize");
+window.addEventListener("resize", OnWindowResizeCallback as any, false);
+const OnTickCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnTick");
+GlobalBrowserEventProcessingEngine.Subscribe("OnTick", null, () => {
+  window.requestAnimationFrame(OnTickCallback as any);
+});
+OnTickCallback();
 
-interface TickableObject {
-  OnTick: Function;
-}
 
 class Camera extends Three.PerspectiveCamera {
   constructor() {
@@ -65,25 +47,28 @@ class Neuron extends Three.Mesh {
   }
 };
 
-class Renderer extends Three.WebGLRenderer implements TickableObject {
+class Renderer extends Three.WebGLRenderer {
   constructor(private scene: Scene, private camera: Camera) {
     super({antialias: true, alpha: true});
     this.setPixelRatio( window.devicePixelRatio );
-    this.setSize( window.innerWidth, window.innerHeight );    
+    this.setSize( window.innerWidth, window.innerHeight );
+    GlobalBrowserEventProcessingEngine.Subscribe("OnTick", this, this.OnTick);
   }
   OnTick() {
     this.render(this.scene, this.camera);
   }
 };
 
-class NavigationSystem implements TickableObject {
+class NavigationSystem {
   constructor(private scene: Scene, private camera: Camera, private renderer: Renderer) {
-    document.addEventListener('mousemove', this.OnMouseMove.bind(this), false);
-    document.addEventListener('touchstart', this.OnTouchStart.bind(this), false);
-    document.addEventListener('touchmove', this.OnTouchMove.bind(this), false);
-    window.addEventListener( 'resize', this.OnWindowResize.bind(this), false );
-    this.OnWindowResize(null);
+    this.OnWindowResize(null); // Initial size set-up
+    GlobalBrowserEventProcessingEngine.Subscribe("OnMouseMove", this, this.OnMouseMove);
+    GlobalBrowserEventProcessingEngine.Subscribe("OnTouchStart", this, this.OnTouchStart);
+    GlobalBrowserEventProcessingEngine.Subscribe("OnTouchMove", this, this.OnTouchMove);
+    GlobalBrowserEventProcessingEngine.Subscribe("OnWindowResize", this, this.OnWindowResize);
+    GlobalBrowserEventProcessingEngine.Subscribe("OnTick", this, this.OnTick);
   }
+  
   OnTick() {
     this.camera.position.x += ( this.MouseX - this.camera.position.x ) * .05;
     this.camera.position.y += ( - this.MouseY + 200 - this.camera.position.y ) * .05;
@@ -108,7 +93,7 @@ class NavigationSystem implements TickableObject {
     }
   }
   OnWindowResize(event: any) {
-    let browserDimensions : Dimensions = BrowserUtils.GetBrowserDimension();
+    let browserDimensions = BrowserUtils.GetBrowserDimension();
     this.WindowHalfWidth = browserDimensions.width / 2;
     this.WindowHalfHeight = browserDimensions.height / 2;
     this.renderer.setSize( browserDimensions.width, browserDimensions.height );
@@ -121,36 +106,17 @@ class NavigationSystem implements TickableObject {
   WindowHalfHeight: number = 0;
 }
 
-
-let TickableObjects: TickableObject[] = [];
-function CreateObject<T>(type: new (...args: any[]) => T, ...args: any[]) : T {
-  let NewObject: any = new type(...args);
-  if (NewObject.OnTick !== undefined) {
-    TickableObjects.push(NewObject as TickableObject);
-  }
-  return NewObject as T;
-}
-
 (function main() {
-  let camera = CreateObject(Camera);
-  let scene = CreateObject(Scene);
-  let neuron = CreateObject(Neuron, 0, 0);
+  let camera = new Camera();
+  let scene = new Scene();
+  let neuron = new Neuron(0, 0);
   scene.add(neuron);
-  let neuron2 = CreateObject(Neuron, 50, 30);
+  let neuron2 = new Neuron(50, 30);
   scene.add(neuron2);
-  let renderer = CreateObject(Renderer, scene, camera);
-  let navigationSystem = CreateObject(NavigationSystem, scene, camera, renderer);
+  //var light = new Three.AmbientLight(0xffffff);
+  //scene.add(light);
+  let renderer = new Renderer(scene, camera);
+  let navigationSystem = new NavigationSystem(scene, camera, renderer);
   renderer.render(scene, camera);
-  document.body.appendChild(renderer.domElement);
-
-
-  // Start rendering every frames
-  OnRepaint();
-  function OnRepaint() {
-    window.requestAnimationFrame(OnRepaint);
-    for (let i in TickableObjects) {
-      TickableObjects[i].OnTick();
-    }
-  }
-  
+  document.body.appendChild(renderer.domElement);  
 })();
