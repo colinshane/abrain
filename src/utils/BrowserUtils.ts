@@ -1,13 +1,13 @@
 interface Dimensions {
-  width: number;
-  height: number;
+  Width: number;
+  Height: number;
 }
 
 namespace BrowserUtils {
   export function GetBrowserDimension(): Dimensions {
     return {
-      width:  window.innerWidth,
-      height: window.innerHeight
+      Width:  window.innerWidth,
+      Height: window.innerHeight
     }
   }
 }

@@ -2,23 +2,28 @@ import './css/index.css';
 import * as Three from 'three';
 import EventProcessingEngine from "./core/EventProcessingEngine";
 import BrowserUtils from "./utils/BrowserUtils";
+import { Neuron } from "./core/NeuralNetwork";
 
 
 /* Create the global event processing engine for browser related events */
-const GlobalBrowserEventProcessingEngine = new EventProcessingEngine();
-const OnMouseMoveCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnMouseMove");
-document.addEventListener("mousemove", OnMouseMoveCallback as any, false);
-const OnTouchStartCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnTouchStart");
-document.addEventListener("touchstart", OnTouchStartCallback as any, false);
-const OnTouchMoveCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnTouchMove");
-document.addEventListener("touchmove", OnTouchMoveCallback as any, false);
-const OnWindowResizeCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnWindowResize");
-window.addEventListener("resize", OnWindowResizeCallback as any, false);
-const OnTickCallback = GlobalBrowserEventProcessingEngine.CreateEvent("OnTick");
-GlobalBrowserEventProcessingEngine.Subscribe("OnTick", null, () => {
-  window.requestAnimationFrame(OnTickCallback as any);
-});
-OnTickCallback();
+const BrowserEventProcessingEngine = new EventProcessingEngine();
+
+{ // Binding some of the browser global events to the GlobalBrowserEventProcessingEngine
+  const OnMouseMoveCallback = BrowserEventProcessingEngine.CreateEvent("OnMouseMove");
+  document.addEventListener("mousemove", OnMouseMoveCallback as any, false);
+  const OnTouchStartCallback = BrowserEventProcessingEngine.CreateEvent("OnTouchStart");
+  document.addEventListener("touchstart", OnTouchStartCallback as any, false);
+  const OnTouchMoveCallback = BrowserEventProcessingEngine.CreateEvent("OnTouchMove");
+  document.addEventListener("touchmove", OnTouchMoveCallback as any, false);
+  const OnWindowResizeCallback = BrowserEventProcessingEngine.CreateEvent("OnWindowResize");
+  window.addEventListener("resize", OnWindowResizeCallback as any, false);
+  const OnFrameTickCallback = BrowserEventProcessingEngine.CreateEvent("OnFrameTick");
+  BrowserEventProcessingEngine.Subscribe("OnFrameTick", null, () => {
+    window.requestAnimationFrame(OnFrameTickCallback as any);
+  });
+  OnFrameTickCallback();
+}
+
 
 
 class Camera extends Three.PerspectiveCamera {
@@ -36,14 +41,21 @@ class Scene extends Three.Scene {
   }
 };
 
-class Neuron extends Three.Mesh {
+
+class DrawnNeuron extends Neuron {
+  private Mesh: Three.Mesh;
   constructor(x: number, y: number) {
-    super(
-      new Three.SphereGeometry( 15, 8, 8 ), 
+    super();
+    this.Mesh = new Three.Mesh(
+      new Three.SphereGeometry( 5, 8, 8 ), 
       new Three.MeshBasicMaterial( {color: 0xFFFFFF} )
     );
-    this.position.x = x;
-    this.position.y = y;
+    this.Mesh.position.x = x;
+    this.Mesh.position.y = y;
+  }
+
+  GetMesh(): Three.Mesh {
+    return this.Mesh;
   }
 };
 
@@ -52,24 +64,33 @@ class Renderer extends Three.WebGLRenderer {
     super({antialias: true, alpha: true});
     this.setPixelRatio( window.devicePixelRatio );
     this.setSize( window.innerWidth, window.innerHeight );
-    GlobalBrowserEventProcessingEngine.Subscribe("OnTick", this, this.OnTick);
+    BrowserEventProcessingEngine.Subscribe("OnFrameTick", this, this.OnFrameTick);
+    BrowserEventProcessingEngine.Subscribe("OnWindowResize", this, this.OnWindowResize);
   }
-  OnTick() {
+  OnFrameTick() {
     this.render(this.scene, this.camera);
+  }
+  OnWindowResize(event: any) {
+    let browserDimensions = BrowserUtils.GetBrowserDimension();
+    this.setSize( browserDimensions.Width, browserDimensions.Height );
   }
 };
 
+/**
+ * Defines how the user navigates the camera in the world
+ * Also currently controls the aspect ratio of the renderer
+ */
 class NavigationSystem {
-  constructor(private scene: Scene, private camera: Camera, private renderer: Renderer) {
+  constructor(private scene: Scene, private camera: Camera) {
     this.OnWindowResize(null); // Initial size set-up
-    GlobalBrowserEventProcessingEngine.Subscribe("OnMouseMove", this, this.OnMouseMove);
-    GlobalBrowserEventProcessingEngine.Subscribe("OnTouchStart", this, this.OnTouchStart);
-    GlobalBrowserEventProcessingEngine.Subscribe("OnTouchMove", this, this.OnTouchMove);
-    GlobalBrowserEventProcessingEngine.Subscribe("OnWindowResize", this, this.OnWindowResize);
-    GlobalBrowserEventProcessingEngine.Subscribe("OnTick", this, this.OnTick);
+    BrowserEventProcessingEngine.Subscribe("OnMouseMove", this, this.OnMouseMove);
+    BrowserEventProcessingEngine.Subscribe("OnTouchStart", this, this.OnTouchStart);
+    BrowserEventProcessingEngine.Subscribe("OnTouchMove", this, this.OnTouchMove);
+    BrowserEventProcessingEngine.Subscribe("OnWindowResize", this, this.OnWindowResize);
+    BrowserEventProcessingEngine.Subscribe("OnFrameTick", this, this.OnFrameTick);
   }
   
-  OnTick() {
+  OnFrameTick() {
     this.camera.position.x += ( this.MouseX - this.camera.position.x ) * .05;
     this.camera.position.y += ( - this.MouseY + 200 - this.camera.position.y ) * .05;
     this.camera.lookAt( this.scene.position );
@@ -94,10 +115,9 @@ class NavigationSystem {
   }
   OnWindowResize(event: any) {
     let browserDimensions = BrowserUtils.GetBrowserDimension();
-    this.WindowHalfWidth = browserDimensions.width / 2;
-    this.WindowHalfHeight = browserDimensions.height / 2;
-    this.renderer.setSize( browserDimensions.width, browserDimensions.height );
-    this.camera.aspect = browserDimensions.width / browserDimensions.height;
+    this.WindowHalfWidth = browserDimensions.Width / 2;
+    this.WindowHalfHeight = browserDimensions.Height / 2;
+    this.camera.aspect = browserDimensions.Width / browserDimensions.Height;
     this.camera.updateProjectionMatrix();
   }
   MouseX: number = 0;
@@ -109,14 +129,14 @@ class NavigationSystem {
 (function main() {
   let camera = new Camera();
   let scene = new Scene();
-  let neuron = new Neuron(0, 0);
-  scene.add(neuron);
-  let neuron2 = new Neuron(50, 30);
-  scene.add(neuron2);
+  let neuron = new DrawnNeuron(0, 0);
+  scene.add(neuron.GetMesh());
+  let neuron2 = new DrawnNeuron(50, 30);
+  scene.add(neuron2.GetMesh());
   //var light = new Three.AmbientLight(0xffffff);
   //scene.add(light);
   let renderer = new Renderer(scene, camera);
-  let navigationSystem = new NavigationSystem(scene, camera, renderer);
+  let navigationSystem = new NavigationSystem(scene, camera);
   renderer.render(scene, camera);
   document.body.appendChild(renderer.domElement);  
 })();
