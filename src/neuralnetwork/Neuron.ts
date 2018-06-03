@@ -1,4 +1,4 @@
-import EventProcessingEngine from "./EventProcessingEngine";
+import EventProcessingEngine from "../core/EventProcessingEngine";
 
 const NeuronalTickTime = 10; //ms
 
@@ -9,12 +9,10 @@ const NeuralEventProcessingEngine = new EventProcessingEngine();
   window.setInterval(OnNeuronTick, NeuronalTickTime); //10ms neural tick to be validated
 }
 
-export class Synapse {
+export class Axon {
   TargetNeurons: Neuron[] = [];
   IsExcitatory: boolean = true; // else => inhibits the neurons
-  constructor(private SourceNeuron: Neuron)
-  {
-  }
+  constructor(private SourceNeuron: Neuron) { }
   public OnActionPotential(Voltage: number)
   {
     let voltageDiff = this.IsExcitatory ? Voltage : -Voltage;
@@ -54,13 +52,12 @@ export class Neuron {
       this.RefractoryPeriodCounter = this.RefractoryPeriodLength;
       this.OnActionPotential();
     }
-
   }
 
   private OnActionPotential() {
-    for (let i in this.Synapses)
+    for (let i in this.Axons)
     {
-      this.Synapses[i].OnActionPotential(this.DischargeValue);
+      this.Axons[i].OnActionPotential(this.DischargeValue);
     }
   }
 
@@ -78,12 +75,11 @@ export class Neuron {
   private MembraneTimeConstant: number; //tau
 
   private ResetVoltage: number = 0;
-  //private PeriodCounter: number = 0;
   private Threshold: number = -55; //Typical threshold potential
   private RefractoryPeriodLength: number = 2; //2*NeuronalTickTime of refractory period
   private RefractoryPeriodCounter: number = 0;
 
-  private Synapses: Synapse[] = []; /* Only contains synapses from which current neuron is the source */
+  private Axons: Axon[] = [];
   private DischargeValue: number = 1; //TODO: Validate number
   
 }
