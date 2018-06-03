@@ -5,7 +5,8 @@ import * as Three from 'three';
 
 class Camera extends Three.PerspectiveCamera {
   constructor(SpawningPosition: Three.Vector3) {
-    super(40, window.innerWidth / window.innerHeight, 1, 15000);
+    let dimensions = BrowserUtils.GetBrowserDimension();
+    super(40, dimensions.Width / dimensions.Height, 1, 15000);
     this.position.x = SpawningPosition.x;
     this.position.y = SpawningPosition.y;
     this.position.z = SpawningPosition.z;
@@ -14,7 +15,6 @@ class Camera extends Three.PerspectiveCamera {
 
 /**
  * Defines how the user navigates the camera in the world
- * Also currently controls the aspect ratio of the renderer
  */
 export default class NavigationSystem extends Camera {
   constructor(SpawningPosition: Three.Vector3) {

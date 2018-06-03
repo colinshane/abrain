@@ -1,27 +1,9 @@
 import './css/index.css';
 import * as Three from 'three';
-import { Neuron } from "./neuralnetwork/Neuron";
 import { Scene, WorldRenderer } from "./rendering/WorldRenderer";
 import NavigationSystem from "./rendering/NavigationSystem";
 import { BrowserEventProcessingEngine } from "./core/Globals";
-
-class DrawnNeuron extends Neuron {
-  private Mesh: Three.Mesh;
-  constructor(x: number, y: number) {
-    super();
-    this.Mesh = new Three.Mesh(
-      new Three.SphereGeometry( 5, 8, 8 ), 
-      new Three.MeshBasicMaterial( {color: 0xFFFFFF} )
-    );
-    this.Mesh.position.x = x;
-    this.Mesh.position.y = y;
-  }
-
-  GetMesh(): Three.Mesh {
-    return this.Mesh;
-  }
-};
-
+import { DrawnNeuron, DrawnAxon } from "./rendering/DrawnNeuron";
 
 class AudioInput
 {
@@ -36,7 +18,7 @@ class AudioInput
   OnTick() {
     let dataArray = new Uint8Array(this.BufferSize);
     this.Analyser.getByteTimeDomainData(dataArray);
-    //console.log(dataArray.length);
+    //console.log(dataArray);
   }
 
   private OnReceiveStream(Stream: MediaStream) {
@@ -54,7 +36,6 @@ class AudioInput
   private OnAudioRequestFailed(Err: string) {
     throw Err;
   }
-
 }
 
 
@@ -63,14 +44,12 @@ class AudioInput
   let scene = new Scene();
   let worldRenderer = new WorldRenderer(scene, navigationSystem);
   
-  let neuron = new DrawnNeuron(0, 0);
+  let neuron = new DrawnNeuron(new Three.Vector3(0, 0));
   scene.add(neuron.GetMesh());
-  let neuron2 = new DrawnNeuron(50, 30);
+  let neuron2 = new DrawnNeuron(new Three.Vector3(50, 30));
   scene.add(neuron2.GetMesh());
   // let light = new Three.AmbientLight(0xffffff);
   // scene.add(light);
-  //let renderer = new Renderer(scene, camera);
-  //let navigationSystem = new NavigationSystem(scene, camera);
   document.body.appendChild(worldRenderer.domElement);  
 
   //new AudioInput(1024);

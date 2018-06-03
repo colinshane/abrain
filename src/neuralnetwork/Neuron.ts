@@ -6,7 +6,7 @@ const NeuronalTickTime = 10; //ms
 const NeuralEventProcessingEngine = new EventProcessingEngine();
 {
   const OnNeuronTick = NeuralEventProcessingEngine.CreateEvent("OnNeuronTick");
-  window.setInterval(OnNeuronTick, NeuronalTickTime); //10ms neural tick to be validated
+  window.setInterval(OnNeuronTick, NeuronalTickTime);
 }
 
 export class Axon {
@@ -57,7 +57,7 @@ export class Neuron {
   private OnActionPotential() {
     for (let i in this.Axons)
     {
-      this.Axons[i].OnActionPotential(this.DischargeValue);
+      this.Axons[i].OnActionPotential(this.Weight);
     }
   }
 
@@ -80,6 +80,6 @@ export class Neuron {
   private RefractoryPeriodCounter: number = 0;
 
   private Axons: Axon[] = [];
-  private DischargeValue: number = 1; //TODO: Validate number
+  private Weight: number = 1; //TODO: linear discharge ??
   
 }
