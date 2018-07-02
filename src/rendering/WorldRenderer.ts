@@ -7,7 +7,7 @@ export class Scene extends Three.Scene {
   constructor() {
     super();
     this.background = new Three.Color().setHSL(0.51, 0.4, 0.01);
-    this.fog = new Three.Fog(this.background, 3500, 15000);
+    this.fog = new Three.Fog(this.background.getHex(), 3500, 15000);
   }
 };
 

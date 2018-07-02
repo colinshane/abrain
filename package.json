@@ -1,7 +1,7 @@
 {
   "name": "abrain",
   "version": "1.0.0",
-  "description": "3D brain visualization with real use case implementation",
+  "description": "3D spiking neural net visualization with real use case implementation",
   "scripts": {
     "build": "webpack",
     "start": "webpack-dev-server",
@@ -21,14 +21,14 @@
   "bugs": {
     "url": "https://github.com/tihbe/abrain/issues"
   },
-  "homepage": "https://github.com/tihbe/abrain#readme",
+  "homepage": "http://tihbe.github.io/abrain",
   "dependencies": {
-    "@types/three": "^0.92.3",
-    "three": "^0.93.0"
+    "three": "^0.94.0"
   },
   "devDependencies": {
     "@types/chai": "^4.1.3",
     "@types/mocha": "^5.2.1",
+    "@types/three": "^0.92.11",
     "chai": "^4.1.2",
     "css-loader": "^0.28.11",
     "html-webpack-plugin": "^3.2.0",
