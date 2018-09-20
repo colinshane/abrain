@@ -12,6 +12,10 @@ export const BrowserEventProcessingEngine = new EventProcessingEngine();
   document.addEventListener("touchmove", OnTouchMoveCallback as any, false);
   const OnWindowResizeCallback = BrowserEventProcessingEngine.CreateEvent("OnWindowResize");
   window.addEventListener("resize", OnWindowResizeCallback as any, false);
+  const OnKeydownCallback = BrowserEventProcessingEngine.CreateEvent("OnKeyDown");
+  window.addEventListener("keydown", OnKeydownCallback as any, false);
+  const OnKeyupCallback = BrowserEventProcessingEngine.CreateEvent("OnKeyUp");
+  window.addEventListener("keyup", OnKeyupCallback as any, false);
   const OnFrameTickCallback = BrowserEventProcessingEngine.CreateEvent("OnFrameTick");
   BrowserEventProcessingEngine.Subscribe("OnFrameTick", null, () => {
     window.requestAnimationFrame(OnFrameTickCallback as any);
